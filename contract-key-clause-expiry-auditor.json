@@ -1,0 +1,454 @@
+{
+  "name": "Contract Key Clause & Expiry Auditor",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "89b0a7f0-096b-4795-a044-89b830d119b2",
+      "name": "When clicking ‘Execute workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1FKDEbZLtjPjybXKgn00Q39mTqwO19xD0",
+          "mode": "list",
+          "cachedResultName": "contract.txt",
+          "cachedResultUrl": "https://drive.google.com/file/d/1FKDEbZLtjPjybXKgn00Q39mTqwO19xD0/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "id": "bb337d54-d4fd-4b92-8ec7-ee2ab90dc877",
+      "name": "Download file",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Sc6Q18pImRa8qBAh",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "destinationKey": "text",
+        "options": {}
+      },
+      "id": "cf0583ee-ed9d-4f0d-a0b9-942ed121c9c5",
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Input text:\n{{ $json.text }}",
+        "options": {
+          "systemMessage": "Find the expiration date or end date in the input text and return it as Expiry Date in YYYY-MM-DD format. If the text has no expiry or end date, reply exactly: No expiry date found."
+        }
+      },
+      "id": "5d79b60b-f183-4796-9b06-54a9848bbd36",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "0fc20555-2eca-4a0f-9fb2-bb5b7feda188",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        240
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $('Extract from File').item.json.text }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "expiry_date",
+              "description": "Expiration or end date of the document in YYYY-MM-DD format. Leave empty if the document has no expiry date."
+            },
+            {
+              "name": "notice_period",
+              "description": "Number of days required before expiry/termination"
+            },
+            {
+              "name": "renewal_terms",
+              "description": "Whether/how the contract renews"
+            },
+            {
+              "name": "termination_clause",
+              "description": "Conditions and notice required to terminate"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "79abad9c-2465-4ba3-981d-186185f86a91",
+      "name": "Information Extractor",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "bf821437-6fca-487e-860b-25fee9d8213f",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        976,
+        208
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cac6ca55-0e34-44b6-a40d-f7ac5158f3de",
+              "leftValue": "={{ $json.output.expiry_date ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1c646abb-ae19-4558-8677-fec052834560",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1408,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "praisysahithamanda@gmail.com",
+          "mode": "list",
+          "cachedResultName": "praisysahithamanda@gmail.com"
+        },
+        "start": "={{ DateTime.fromISO($json.output.expiry_date).toFormat('yyyy-MM-dd') }}",
+        "end": "={{ DateTime.fromISO($json.output.expiry_date).plus({ days: 1 }).toFormat('yyyy-MM-dd') }}",
+        "additionalFields": {
+          "allday": "yes",
+          "description": "=Notice period: {{ $json.output.notice_period }}\nRenewal terms: {{ $json.output.renewal_terms }}\nTermination clause: {{ $json.output.termination_clause }}",
+          "summary": "Contract Expiry Reminder"
+        }
+      },
+      "id": "f99b95d2-de00-42cb-86da-d8c89003a7e5",
+      "name": "Create an event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1696,
+        -16
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "nPZiZAx0tsFP3sqb",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1acYCJYlfI8ndLVlA62c6MkEv7BZoL7Fpw4ycMu67gqE",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1acYCJYlfI8ndLVlA62c6MkEv7BZoL7Fpw4ycMu67gqE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1593912833,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1acYCJYlfI8ndLVlA62c6MkEv7BZoL7Fpw4ycMu67gqE/edit#gid=1593912833"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "output": "=Expiry date: {{ $(\"Information Extractor\").item.json.output.expiry_date }} | Notice period: {{ $(\"Information Extractor\").item.json.output.notice_period ?? '-' }} | Renewal terms: {{ $(\"Information Extractor\").item.json.output.renewal_terms ?? '-' }} | Termination clause: {{ $(\"Information Extractor\").item.json.output.termination_clause ?? '-' }} | Calendar event: {{ $json.htmlLink }}"
+          },
+          "schema": [
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "4d8081f8-72ec-45e4-8a35-bb2f26491444",
+      "name": "Append row in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1936,
+        -16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "52QEBkaduPpyKUfI",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1acYCJYlfI8ndLVlA62c6MkEv7BZoL7Fpw4ycMu67gqE",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1acYCJYlfI8ndLVlA62c6MkEv7BZoL7Fpw4ycMu67gqE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1593912833,
+          "mode": "list",
+          "cachedResultName": "Sheet2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1acYCJYlfI8ndLVlA62c6MkEv7BZoL7Fpw4ycMu67gqE/edit#gid=1593912833"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "output": "=No expiry date found | Notice period: {{ $json.output.notice_period ?? '-' }} | Renewal terms: {{ $json.output.renewal_terms ?? '-' }} | Termination clause: {{ $json.output.termination_clause ?? '-' }}"
+          },
+          "schema": [
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "69a3dad8-4ae9-40c5-b60c-6a509c32d5ac",
+      "name": "Append row in sheet1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1712,
+        192
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "52QEBkaduPpyKUfI",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "13503732-8b25-4ae2-88c5-44dc4fdd606a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "540948258ea9f39af9ac64ca5c350811b016b1fc047aefa84fcdafcf21a165e9"
+  },
+  "nodeGroups": [],
+  "id": "gwVhcKRgPUrWqoMV",
+  "tags": []
+}
